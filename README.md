@@ -1,6 +1,6 @@
 ### node-nfc-nci
 
-#### depedencies
+#### dependencies
 
 cmake
 
@@ -84,7 +84,7 @@ via context
 
 via tag
 
-`tag.write(type<string>, content<string>)` - attempt immediate write to which ever tag is present. This write does not guarantee it will write only to the particular tag `tag` describes, as it's only a convenience alias to `context.immediateWrite` 
+`tag.write(type<string>, content<string>)` - attempt immediate write to which ever tag is present. This write does not guarantee it will write only to the particular tag `tag` describes, as it's only a convenience alias to `context.immediateWrite`
 
 Acceptable types
 - `Text` - writes `en` lang text to the NDEF content
