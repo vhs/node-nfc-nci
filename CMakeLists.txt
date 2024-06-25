@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 2.8)
+cmake_minimum_required(VERSION 3.22.0)
 
 # Name of the project (will be the name of the plugin)
 project(node_nfc_nci)
