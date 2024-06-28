@@ -1,9 +1,9 @@
 const nci = require("./index");
 
-nci.listen(context => {
-    context.on("error", msg => console.log(msg));
+nci.listen((context) => {
+    context.on("error", (msg) => console.log(msg));
 
-    context.on("arrived", tag => {
+    context.on("arrived", (tag) => {
         console.log(`ARRIVED: ${JSON.stringify(tag)}`);
 
         if (!context.hasNextWrite()) {
@@ -18,7 +18,7 @@ nci.listen(context => {
         console.log(`UPDATED: ${JSON.stringify(tag)}`);
     });
 
-    context.on("departed", tag => {
+    context.on("departed", (tag) => {
         console.log(`DEPARTED: ${JSON.stringify(tag)}`);
 
         if (tag.ndef.content !== "blarg") {
