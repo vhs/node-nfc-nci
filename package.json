@@ -1,5 +1,5 @@
 {
-    "name": "node-nfc-nci",
+    "name": "@vhs/node-nfc-nci",
     "version": "1.0.6",
     "description": "NXP NFC NCI Node wrapper",
     "repository": "https://github.com/vhs/node-nfc-nci",
