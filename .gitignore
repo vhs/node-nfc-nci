@@ -66,3 +66,7 @@ cmake-build-debug
 cmake-build-default
 .kdev4
 *.kdev4
+
+external/
+externals/
+vendor/

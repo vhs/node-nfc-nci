@@ -1,8 +1,13 @@
-const EventEmitter = require('events').EventEmitter;
+const { EventEmitter } = require("events");
 
-const debug = process.env.NODE_DEBUG && process.env.NODE_DEBUG.includes('node_nfc_nci');
+const debug =
+    process.env.NODE_DEBUG && process.env.NODE_DEBUG.includes("node-nfc-nci");
 
-const native_nci = require(`./build/${debug ? 'Debug' : 'Release'}/node_nfc_nci`);
+const moduleFile = debug
+    ? `./build/Debug/node-nfc-nci.node`
+    : `./build/Release/node-nfc-nci.node`;
+
+const native_nci = require(moduleFile);
 
 class NCIListener extends EventEmitter {
     constructor() {
@@ -11,22 +16,23 @@ class NCIListener extends EventEmitter {
         this.emitter = new EventEmitter();
         this.context = null;
 
-        this.emitter.on("arrived", tag => {
-           tag.write = (type, content) => this.context.immediateWrite({ type, content });
+        this.emitter.on("arrived", (tag) => {
+            tag.write = (type, content) =>
+                this.context.immediateWrite({ type, content });
 
-           this.emit("arrived", tag);
+            this.emit("arrived", tag);
         });
 
-        this.emitter.on("error", error => {
-           this.emit("error", error);
+        this.emitter.on("error", (error) => {
+            this.emit("error", error);
         });
 
-        this.emitter.on("departed", tag => {
-           this.emit("departed", tag);
+        this.emitter.on("departed", (tag) => {
+            this.emit("departed", tag);
         });
 
         this.emitter.on("written", (tag, previous) => {
-           this.emit("written", tag, previous);
+            this.emit("written", tag, previous);
         });
     }
 

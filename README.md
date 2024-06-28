@@ -1,56 +1,85 @@
-### node-nfc-nci
+# node-nfc-nci
 
-#### depedencies
+NXP NFC NCI Linux Node wrapper
 
-cmake
+## Install
 
-`sudo apt install -y cmake automake autoconf libtool pkg-config`
-
-linux_libnfc-nci - https://github.com/NXPNFCLinux/linux_libnfc-nci
-
-`git clone https://github.com/NXPNFCLinux/linux_libnfc-nci.git`
-
-`./bootstrap`
-
-
-`./configure --enable-alt`
-
-`make`
-
-`sudo make install`
-
-It installs the libnfc-nci-linux library to /usr/local/lib target directory. This path must be
-added to LD_LIBRARY_PATH environment variable for proper reference to the library
-during linking/execution of application.
-
-#### setup
-
-`npm install node-nfc-nci`
-
-https://www.npmjs.com/package/node-nfc-nci
-
-#### documentation
-
-include
-`const nci = require("node-nfc-nci");`
-
-module exports nci interface object with single method `listen`
-
-`listen(callback<function>)` - will attempt to initialize the device via the `linux_libnfc-nci` library on a new thread and immediately call the callback with a `context` object.
-
-`context` - context is an event emitter and interface to setting tag write for the next tag to arrive.
-
-###### events
-
-`error` - `message<string>` - emits on any error, even for errors when attempting to initialize the device.
-`arrived` - `tag<object>` - emits on NFC tag arrival
-`departed` -`tag<object>` - emits on NFC tag departure. Provide a copy of the original arrived tag. If NDEF data has been updated during the tag's presence it will not be reflected in departure.
-`written` - `tag<object>, previous<object>` - emits on successful tag NDEF write. Provides updated tag and a copy of the original arrived tag prior to update.
-
-###### tag object
-
-example
 ```
+npm install @vhs/node-nfc-nci
+```
+
+**Note**: See [Requirements](#requirements) for installation requirements
+
+## Usage
+
+```javascript
+const nci = require("node-nfc-nci");
+```
+
+This module exports an NCI interface object with single method: `listen`.
+
+### `listen(callback: (context: EventEmitter) => void)`
+
+When called, `listen` will attempt to initialize the device (on a separate thread) via the embedded `linux_libnfc-nci` library and if successful, immediately call the callback with a `context` object.
+
+The `context` object passed to the callback is an event emitter and enables asynchronous operations between reading tags.
+
+See [Events](#events) below for more information about the events.
+See [Context](#context) below for more information about the context object.
+
+## Events
+
+| Event      | Argument(s)                     | Description                                                                                                                                                            |
+| ---------- | ------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `error`    | `message<string>`               | emits on any error, even for errors when attempting to initialize the device.                                                                                          |
+| `arrived`  | `tag<Tag>`                      | emits on NFC tag arrival                                                                                                                                               |
+| `departed` | `tag<Tag>`                      | emits on NFC tag departure. Provide a copy of the original arrived tag. If NDEF data has been updated during the tag's presence it will not be reflected in departure. |
+| `written`  | `current<Tag>`, `previous<Tag>` | emits on successful tag NDEF write. Provides updated tag and a copy of the original arrived tag prior to update.                                                       |
+
+## Objects and Interfaces
+
+### Context
+
+#### Methods
+
+##### `context.setNextWrite(type<string>, content<string>)`
+
+Sets data to write for next tag to be detected.
+
+This will attempt to indiscriminately write the next tag that arrives.
+
+##### `context.clearNextWrite()`
+
+Clears the pending next write.
+
+##### `context.hasNextWrite()<bool>`
+
+Check if there is a next write pending.
+
+##### `context.immediateWrite(type<string>, content<string>)`
+
+Attempts to immediately write to any device that is present.
+However, tag `arrived` event provides a `tag.write` function which is an alias of `immediateWrite` but likely more practical because `immediateWrite` depends on a device being present.
+
+### Tag Object
+
+For properties, see example below.
+
+#### Methods
+
+##### `tag.write(type<string>, content<string>)`
+
+This method attempts to immediately write to which ever tag is present.
+
+As `tag.write` is a thin wrapper to `context.immediateWrite`, there are no guarantees that this write will only write to the tag specified in the `tag` object that was passed.
+
+Acceptable types
+
+-   `Text` - writes `en` lang text to the NDEF content |
+
+Example of a typical Tag Object payload
+
+```JSON
 {
   "technology": {
     "code": 9,
@@ -73,31 +102,15 @@ example
 }
 ```
 
-##### tag write
+## Example
 
-via context
-
-`context.setNextWrite(type<string>, content<string>)` - set data to write for next tag arrival, this will attempt to indiscriminately write the next tag that arrives.
-`context.clearNextWrite()` - clears the pending next write.
-`context.hasNextWrite()<bool>` - flag to check if there is a next write pending.
-`context.immediateWrite(type<string>, content<string>)` - attempts to immediately write to the device that is present. However, tag `arrived` event provides a `tag.write` function which is an alias of `immediateWrite` but likely more practical because `immediateWrite` depends on a device being present.
-
-via tag
-
-`tag.write(type<string>, content<string>)` - attempt immediate write to which ever tag is present. This write does not guarantee it will write only to the particular tag `tag` describes, as it's only a convenience alias to `context.immediateWrite` 
-
-Acceptable types
-- `Text` - writes `en` lang text to the NDEF content
-
-#### example
-
-```
+```javascript
 const nci = require("node-nfc-nci");
 
-nci.listen(context => {
-    context.on("error", msg => console.log(msg));
+nci.listen((context) => {
+    context.on("error", (msg) => console.log(msg));
 
-    context.on("arrived", tag => {
+    context.on("arrived", (tag) => {
         console.log(`ARRIVED: ${JSON.stringify(tag)}`);
 
         if (!context.hasNextWrite()) {
@@ -112,7 +125,7 @@ nci.listen(context => {
         console.log(`UPDATED: ${JSON.stringify(tag)}`);
     });
 
-    context.on("departed", tag => {
+    context.on("departed", (tag) => {
         console.log(`DEPARTED: ${JSON.stringify(tag)}`);
 
         if (tag.ndef.content !== "foobar") {
@@ -121,3 +134,15 @@ nci.listen(context => {
     });
 });
 ```
+
+## Requirements
+
+As this module compiles and uses an embedded version of the library, installing this module only requires base development/build tools.
+
+### Alpine
+
+`sudo apk --no-cache alpine-sdk autoconf automake bash cmake libtool`
+
+### Debian/Ubuntu
+
+`sudo apt install -y cmake automake autoconf libtool pkg-config`
