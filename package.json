@@ -29,5 +29,15 @@
         "runtime": "node",
         "runtimeVersion": "0.12.0",
         "arch": "x64"
-    }
+    },
+    "files": [
+        "CMakeLists.txt",
+        "README.md",
+        "index.js",
+        "package-lock.json",
+        "package.json",
+        "src/*.cpp",
+        "src/*.h",
+        "test.js"
+    ]
 }
