@@ -3,26 +3,26 @@
 
 #include <string>
 #include <exception>
-#include "napi.h"
+#include <napi.h>
 #include "tagmanager.h"
 #include "tag.h"
 #include "mutex.h"
 
-class NodeInterface: public ITagManager
+class NodeInterface : public ITagManager
 {
 public:
-  NodeInterface();
-  ~NodeInterface();
+    NodeInterface();
+    ~NodeInterface();
 
-  void setNextWrite(const Napi::CallbackInfo& info);
-  void clearNextWrite(const Napi::CallbackInfo& info);
-  Napi::Boolean hasNextWrite(const Napi::CallbackInfo& info);
-  void immediateWrite(const Napi::CallbackInfo& info);
+    void setNextWrite(const Napi::CallbackInfo& info);
+    void clearNextWrite(const Napi::CallbackInfo& info);
+    Napi::Boolean hasNextWrite(const Napi::CallbackInfo& info);
+    void immediateWrite(const Napi::CallbackInfo& info);
 
-  void onTagArrived(Tag::Tag* tag);
-  void onTagDeparted();
-  void onTagWritten(Tag::Tag* tag);
-  void onError(std::string message);
+    void onTagArrived(Tag::Tag* tag);
+    void onTagDeparted();
+    void onTagWritten(Tag::Tag* tag);
+    void onError(std::string message);
 };
 
 extern NodeInterface* nodei;

@@ -7,121 +7,121 @@
 
 TagManager& TagManager::getInstance()
 {
-  static TagManager instance;
-  
-  return instance;
+    static TagManager instance;
+
+    return instance;
 }
 
 TagManager::TagManager() = default;
 
 TagManager::~TagManager() {
-  Device::deinitialize();
+    Device::deinitialize();
 }
 
 void TagManager::listen(ITagManager* tagInterface)
 {
-  this->tagInterface = tagInterface;
-  
-  Device::initialize();
-  
-  bool running = true;
+    this->tagInterface = tagInterface;
 
-  while(running) {
-    Device::mutex.Lock();
+    Device::initialize();
 
-    if (Device::state != Device::State::WAITING) {
-      Device::state = Device::State::WAITING;
-      Device::mutex.Wait(false);
-    }
+    bool running = true;
 
-    switch(Device::state) {
-      case Device::State::TAG_ARRIVED: {
-        onTagArrival(&Device::tagInfo);
-      } break;
-      case Device::State::TAG_DEPARTED: {
-        onTagDeparture();
-      } break;
-      default: {
-        running = false;
-      } break;
-    }
+    while (running) {
+        Device::mutex.Lock();
 
-    Device::mutex.Unlock();
-  };
+        if (Device::state != Device::State::WAITING) {
+            Device::state = Device::State::WAITING;
+            Device::mutex.Wait(false);
+        }
+
+        switch (Device::state) {
+        case Device::State::TAG_ARRIVED: {
+            onTagArrival(&Device::tagInfo);
+        } break;
+        case Device::State::TAG_DEPARTED: {
+            onTagDeparture();
+        } break;
+        default: {
+            running = false;
+        } break;
+        }
+
+        Device::mutex.Unlock();
+    };
 }
 
 void TagManager::immediateWrite(Tag::TagNDEF* ndef, bool needsLock) {
-  if (needsLock) {
-    Device::mutex.Lock();
-  }
+    if (needsLock) {
+        Device::mutex.Lock();
+    }
 
-  nfc_tag_info_t tagInfo;
+    nfc_tag_info_t tagInfo;
 
-  memcpy(&tagInfo, &Device::tagInfo, sizeof(nfc_tag_info_t));
-  Tag::Tag* tag = Tag::readTag(&tagInfo);
+    memcpy(&tagInfo, &Device::tagInfo, sizeof(nfc_tag_info_t));
+    Tag::Tag* tag = Tag::readTag(&tagInfo);
 
-  tag->ndefWritten = new Tag::TagNDEFWritten();
+    tag->ndefWritten = new Tag::TagNDEFWritten();
 
-  tag->ndefWritten->written = Tag::writeTagNDEF(&tagInfo, ndef);
-  tag->ndefWritten->previous = tag->ndef;
-  tag->ndefWritten->updated = Tag::readTagNDEF(&tagInfo);
+    tag->ndefWritten->written = Tag::writeTagNDEF(&tagInfo, ndef);
+    tag->ndefWritten->previous = tag->ndef;
+    tag->ndefWritten->updated = Tag::readTagNDEF(&tagInfo);
 
-  tagInterface->onTagWritten(tag);
+    tagInterface->onTagWritten(tag);
 
-  if (needsLock) {
-    Device::mutex.Unlock();
-  }
+    if (needsLock) {
+        Device::mutex.Unlock();
+    }
 }
 
 void TagManager::setNextWrite(Tag::TagNDEF* ndef) {
-  Device::mutex.Lock();
+    Device::mutex.Lock();
 
-  if (Device::state == Device::State::WAITING) {
-    nextWriteNDEF = ndef;
-    hasNextWriteNDEF = true;
-  }
+    if (Device::state == Device::State::WAITING) {
+        nextWriteNDEF = ndef;
+        hasNextWriteNDEF = true;
+    }
 
-  Device::mutex.Unlock();
+    Device::mutex.Unlock();
 }
 
 bool TagManager::hasNextWrite() {
-  return hasNextWriteNDEF;
+    return hasNextWriteNDEF;
 }
 
 void TagManager::clearNextWrite() {
-  Device::mutex.Lock();
+    Device::mutex.Lock();
 
-  nextWriteNDEF = nullptr;
-  hasNextWriteNDEF = false;
+    nextWriteNDEF = nullptr;
+    hasNextWriteNDEF = false;
 
-  Device::mutex.Unlock();
+    Device::mutex.Unlock();
 }
 
 void TagManager::onTagArrival(nfc_tag_info_t* pTagInfo)
 {
-  nfc_tag_info_t tagInfo;
-  
-  memcpy(&tagInfo, pTagInfo, sizeof(nfc_tag_info_t));
-  Tag::Tag* tag = Tag::readTag(&tagInfo);
+    nfc_tag_info_t tagInfo;
 
-  tagInterface->onTagArrived(tag);
+    memcpy(&tagInfo, pTagInfo, sizeof(nfc_tag_info_t));
+    Tag::Tag* tag = Tag::readTag(&tagInfo);
 
-  if (hasNextWriteNDEF) {
-    tag->ndefWritten = new Tag::TagNDEFWritten();
+    tagInterface->onTagArrived(tag);
 
-    tag->ndefWritten->written = Tag::writeTagNDEF(&tagInfo, nextWriteNDEF);
-    tag->ndefWritten->previous = tag->ndef;
-    tag->ndefWritten->updated = Tag::readTagNDEF(&tagInfo);
+    if (hasNextWriteNDEF) {
+        tag->ndefWritten = new Tag::TagNDEFWritten();
 
-    hasNextWriteNDEF = false;
+        tag->ndefWritten->written = Tag::writeTagNDEF(&tagInfo, nextWriteNDEF);
+        tag->ndefWritten->previous = tag->ndef;
+        tag->ndefWritten->updated = Tag::readTagNDEF(&tagInfo);
 
-    tagInterface->onTagWritten(tag);
-  }
+        hasNextWriteNDEF = false;
+
+        tagInterface->onTagWritten(tag);
+    }
 }
 
 void TagManager::onTagDeparture()
 {
-  tagInterface->onTagDeparted();
+    tagInterface->onTagDeparted();
 }
 
 void TagManager::onSnepClientReady()
