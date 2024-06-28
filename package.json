@@ -11,6 +11,15 @@
         "rebuild:debug": "cmake-js -D clean && cmake-js -D compile"
     },
     "author": "Thomas LaFreniere",
+    "contributors": [
+        {
+            "name": "Thomas LaFreniere"
+        },
+        {
+            "name": "TyIsI",
+            "url": "https://github.com/TyIsI"
+        }
+    ],
     "license": "ISC",
     "dependencies": {
         "cmake-js": "^7.3.0",
