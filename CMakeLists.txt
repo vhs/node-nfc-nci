@@ -7,11 +7,15 @@ include(ExternalProject)
 project(node-nfc-nci)
 
 # Variables
-set(PROJECT_DEPENDENCIES_PREFIX "${CMAKE_SOURCE_DIR}/vendor")
-set(PROJECT_DEPENDENCIES_INCLUDES "${PROJECT_DEPENDENCIES_PREFIX}/include")
-set(PROJECT_DEPENDENCIES_LIBS "${PROJECT_DEPENDENCIES_PREFIX}/lib")
+set(VENDOR_PREFIX "${CMAKE_SOURCE_DIR}/vendor")
+set(VENDOR_INCLUDES "${VENDOR_PREFIX}/include")
+set(VENDOR_LIBS "${VENDOR_PREFIX}/lib")
 
-set(NODE_MODULES_PREFIX "${CMAKE_SOURCE_DIR}/node_modules")
+if(EXISTS "${CMAKE_SOURCE_DIR}/node_modules/")
+    set(NODE_MODULES_PREFIX "${CMAKE_CURRENT_SOURCE_DIR}/node_modules")
+else()
+    set(NODE_MODULES_PREFIX "${CMAKE_CURRENT_SOURCE_DIR}/../../")
+endif()
 
 # Resolve common make command
 find_program(MAKE_EXE NAMES gmake nmake make)
@@ -23,12 +27,17 @@ file(GLOB SOURCE_FILES "src/*.cpp" "src/*.h")
 # nfc nci linux library
 #
 ExternalProject_Add(libnfc_nci_linux
-  GIT_REPOSITORY    https://github.com/vhs/linux_libnfc-nci
-  GIT_SHALLOW       true
-  PREFIX            ${PROJECT_DEPENDENCIES_PREFIX}
-  CONFIGURE_COMMAND ./setup.sh ./configure --enable-alt --prefix ${PROJECT_DEPENDENCIES_PREFIX}
-  BUILD_IN_SOURCE   1
-  BUILD_COMMAND     ${MAKE_EXE}
+    GIT_REPOSITORY https://github.com/vhs/linux_libnfc-nci.git
+    GIT_SHALLOW 1
+    UPDATE_DISCONNECTED 1
+    PREFIX ${VENDOR_PREFIX}
+    CONFIGURE_COMMAND ./setup.sh ./configure --enable-alt --prefix ${VENDOR_PREFIX}
+    BUILD_COMMAND ${MAKE_EXE}
+    BUILD_IN_SOURCE 1
+    LOG_DIR "${VENDOR_PREFIX}/logs"
+    LOG_CONFIGURE 1
+    LOG_BUILD 1
+    BUILD_BYPRODUCTS "${VENDOR_LIBS}/libnfc_nci_linux.so"
 )
 
 # Build a shared library named after the project from the files in `src/`
@@ -45,15 +54,13 @@ set_target_properties(${PROJECT_NAME} PROPERTIES PREFIX "" SUFFIX ".node")
 target_include_directories(${PROJECT_NAME} PRIVATE "/usr/include/node")
 
 # Node Addon API
-find_path(NAPI_H_PATH napi.h PATHS "${NODE_MODULES_PREFIX}/*" PATH_SUFFIXES include REQUIRED)
-target_include_directories(${PROJECT_NAME} PRIVATE ${NAPI_H_PATH})
+target_include_directories(${PROJECT_NAME} PRIVATE "${NODE_MODULES_PREFIX}/node-addon-api")
 
 # Node API
-find_path(NODE_API_H_PATH node_api.h PATHS "${NODE_MODULES_PREFIX}/*" PATH_SUFFIXES include REQUIRED)
-target_include_directories(${PROJECT_NAME} PRIVATE ${NODE_API_H_PATH})
+target_include_directories(${PROJECT_NAME} PRIVATE "${NODE_MODULES_PREFIX}/node-api-headers/include")
 
 # Project dependencies
-target_include_directories(${PROJECT_NAME} PRIVATE ${PROJECT_DEPENDENCIES_INCLUDES})
+target_include_directories(${PROJECT_NAME} PRIVATE ${VENDOR_INCLUDES})
 
 # Required CMake includes
 target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_JS_INC})
@@ -67,4 +74,4 @@ target_link_libraries(${PROJECT_NAME} ${CMAKE_JS_LIB})
 
 # Add nfc library dependency
 add_dependencies(${PROJECT_NAME} libnfc_nci_linux)
-target_link_libraries(${PROJECT_NAME} "${PROJECT_DEPENDENCIES_LIBS}/libnfc_nci_linux.so")
+target_link_libraries(${PROJECT_NAME} "${VENDOR_LIBS}/libnfc_nci_linux.so")
